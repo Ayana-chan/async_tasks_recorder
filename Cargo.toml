@@ -1,0 +1,22 @@
+[package]
+name = "async_tasks_recorder"
+version = "1.1.0"
+edition = "2021"
+description = "A struct for recording execution status of async tasks with lock-free and async methods."
+license = "MIT OR Apache-2.0"
+keywords = ["async", "lock-free", "tokio", "record", "query"]
+categories = ["asynchronous"]
+readme = "README.md"
+repository = "https://github.com/Ayana-chan/ipfs_storage_cruster/tree/master/crates/async_tasks_recorder"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+scc = "2.0"
+tokio = { version = "1.0", features = ["rt"] }
+
+[dev-dependencies]
+fastrand = "2.0"
+tokio = { version = "1.0", features = ["time", "rt-multi-thread", "parking_lot"] }
+lazy_static = "1.4"
+serial_test = "3.0"
