@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_variables)]
 
 use std::sync::Arc;
-use async_tasks_recorder::{AsyncTasksRecoder, TaskState};
+use async_tasks_recorder::{AsyncTasksRecorder, TaskState};
 
 struct SimulatedStream {}
 
@@ -30,7 +30,7 @@ fn main() {
 /// Simulate front-end request.
 async fn simulate_requests() {
     println!("hello world!");
-    let recorder = AsyncTasksRecoder::new();
+    let recorder = AsyncTasksRecorder::new();
     let fake_md5 = "d8q793wye1u3".to_string();
 
     println!("REQUEST: check_upload_state {}", fake_md5);
@@ -89,7 +89,7 @@ async fn simulate_requests() {
 // APIs -----------
 
 /// launch
-async fn upload_file(recorder: AsyncTasksRecoder<Arc<String>>, args: UploadFileArgs) {
+async fn upload_file(recorder: AsyncTasksRecorder<Arc<String>>, args: UploadFileArgs) {
     let destination = "some place".to_string(); // decided by some algorithm
     let fut = async move {
         println!("upload_to_destination start!");
@@ -111,7 +111,7 @@ async fn upload_file(recorder: AsyncTasksRecoder<Arc<String>>, args: UploadFileA
 }
 
 /// check
-async fn check_upload_state(recorder: AsyncTasksRecoder<Arc<String>>, arg_md5: String) -> UploadTaskState {
+async fn check_upload_state(recorder: AsyncTasksRecorder<Arc<String>>, arg_md5: String) -> UploadTaskState {
     let arg_md5 = Arc::new(arg_md5);
     let res = recorder.query_task_state(&arg_md5).await;
 
@@ -124,7 +124,7 @@ async fn check_upload_state(recorder: AsyncTasksRecoder<Arc<String>>, arg_md5: S
 }
 
 /// revoke
-async fn delete_file(recorder: AsyncTasksRecoder<Arc<String>>, arg_md5: String) -> bool {
+async fn delete_file(recorder: AsyncTasksRecorder<Arc<String>>, arg_md5: String) -> bool {
     let arg_md5 = Arc::new(arg_md5);
     let fut = async move {
         println!("delete_file start!");

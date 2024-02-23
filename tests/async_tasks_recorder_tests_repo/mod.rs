@@ -19,7 +19,7 @@ pub enum RuntimeType {
 }
 
 pub async fn test_once() {
-    let manager = AsyncTasksRecoder::new();
+    let manager = AsyncTasksRecorder::new();
     let mut task_id_generator = tools::get_task_id_generator();
 
     let id = task_id_generator();
@@ -28,7 +28,7 @@ pub async fn test_once() {
 }
 
 pub async fn test_once_fail() {
-    let manager = AsyncTasksRecoder::new();
+    let manager = AsyncTasksRecorder::new();
     let mut task_id_generator = tools::get_task_id_generator();
 
     let id = task_id_generator();
@@ -38,7 +38,7 @@ pub async fn test_once_fail() {
 
 pub async fn test_basic(task_num: usize, task_latency_range: impl RangeBounds<u64> + Clone,
                         check_time_out: Option<u128>, check_suffix_query_time: u128) {
-    let manager = AsyncTasksRecoder::new();
+    let manager = AsyncTasksRecorder::new();
 
     let task_id_vec = tools::generate_task_id_vec(task_num);
     let task_id_vec = task_id_vec.into();
@@ -48,7 +48,7 @@ pub async fn test_basic(task_num: usize, task_latency_range: impl RangeBounds<u6
 }
 
 pub async fn test_once_redo() {
-    let manager = AsyncTasksRecoder::new();
+    let manager = AsyncTasksRecorder::new();
     let mut task_id_generator = tools::get_task_id_generator();
 
     let id = task_id_generator();
@@ -61,7 +61,7 @@ pub async fn test_random(task_num: usize, task_latency_range: impl RangeBounds<u
                          check_interval_ms: u64, check_time_out_ms: u128,
                          suffix_query_time: u128, redo_task_latency: u64,
                          task_success_probability: u8) {
-    let manager = AsyncTasksRecoder::new();
+    let manager = AsyncTasksRecorder::new();
 
     let task_id_vec = tools::generate_task_id_vec(task_num);
     let task_id_vec = task_id_vec.into();
@@ -91,7 +91,7 @@ pub async fn test_interleave(group_num: usize, group_size_min: usize, group_size
     fastrand::shuffle(&mut working_seq);
     println!("working_seq: {:?}", working_seq);
 
-    let manager = AsyncTasksRecoder::new();
+    let manager = AsyncTasksRecorder::new();
     let mut check_join_set = tokio::task::JoinSet::new();
 
     for cur in working_seq {
@@ -126,7 +126,7 @@ pub async fn test_interleave(group_num: usize, group_size_min: usize, group_size
 }
 
 pub async fn test_simple_launch_check(task_num: usize) {
-    let manager = AsyncTasksRecoder::new();
+    let manager = AsyncTasksRecorder::new();
     let mut task_id_generator = tools::get_task_id_generator();
 
     let mut join_set = tokio::task::JoinSet::new();
@@ -185,7 +185,7 @@ pub async fn test_simple_launch_check(task_num: usize) {
 }
 
 pub async fn test_simple_launch_check_revoke_loop(task_num: usize, redo_num: usize) {
-    let manager = AsyncTasksRecoder::new();
+    let manager = AsyncTasksRecorder::new();
     let mut task_id_generator = tools::get_task_id_generator();
 
     let mut join_set = tokio::task::JoinSet::new();

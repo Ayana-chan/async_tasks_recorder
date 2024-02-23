@@ -1,12 +1,12 @@
 use std::ops::RangeBounds;
 use std::sync::Arc;
-use async_tasks_recorder::AsyncTasksRecoder;
+use async_tasks_recorder::AsyncTasksRecorder;
 use crate::async_tasks_recorder_tests_repo::task::random_task;
 use crate::async_tasks_recorder_tests_repo::tools::get_shuffled_index_map;
 
 /// Launch success task by `task_id_vec`.
 /// The latency of each task is randomly selected within `latency_range`.
-pub async fn launch_vec<Range>(manager: &AsyncTasksRecoder<String>, task_id_vec: &Arc<Vec<String>>,
+pub async fn launch_vec<Range>(manager: &AsyncTasksRecorder<String>, task_id_vec: &Arc<Vec<String>>,
                                latency_range: Range, task_success_probability: u8)
     where Range: RangeBounds<u64> + Clone {
     let task_num = task_id_vec.len();

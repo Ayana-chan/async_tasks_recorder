@@ -26,12 +26,12 @@
 //!
 //! # Usage
 //!
-//! Launch a task with a **unique** `task_id` and a `Future` by [launch](AsyncTasksRecoder::launch).
+//! Launch a task with a **unique** `task_id` and a `Future` by [launch](AsyncTasksRecorder::launch).
 //!
 //! Query the state of the task with its `task_id`
-//! by [query_task_state](AsyncTasksRecoder::query_task_state) or [query_task_state_quick](AsyncTasksRecoder::query_task_state_quick).
+//! by [query_task_state](AsyncTasksRecorder::query_task_state) or [query_task_state_quick](AsyncTasksRecorder::query_task_state_quick).
 //!
-//! Revoke a task with its `task_id` and a `Future` for revoking by [revoke_task_block](crate::AsyncTasksRecoder::revoke_task_block).
+//! Revoke a task with its `task_id` and a `Future` for revoking by [revoke_task_block](crate::AsyncTasksRecorder::revoke_task_block).
 //!
 //! ## Skills
 //!
@@ -108,11 +108,11 @@
 //! 6. Always, when a task is `Success`, it would keep `Success` until the revoking succeed, and then become `NotFound`.
 //!
 //! # Other
-//! Further propositions and proofs at [AsyncTasksRecoder](AsyncTasksRecoder).
+//! Further propositions and proofs at [AsyncTasksRecorder](AsyncTasksRecorder).
 //!
-//! Relationship between states and containers at [query_task_state](AsyncTasksRecoder::query_task_state).
+//! Relationship between states and containers at [query_task_state](AsyncTasksRecorder::query_task_state).
 //!
-//! Use [query_task_state_quick](AsyncTasksRecoder::query_task_state_quick) for less contention.
+//! Use [query_task_state_quick](AsyncTasksRecorder::query_task_state_quick) for less contention.
 //!
 
 use std::borrow::Borrow;
@@ -136,7 +136,7 @@ pub struct TaskManager<T>
     pub success_tasks: scc::HashSet<T>,
     /// Failed tasks.
     pub failed_tasks: scc::HashSet<T>,
-    /// Tasks that is going to be revoked. Just for [revoke_task_block](crate::AsyncTasksRecoder::revoke_task_block).
+    /// Tasks that is going to be revoked. Just for [revoke_task_block](crate::AsyncTasksRecorder::revoke_task_block).
     pub revoking_tasks: scc::HashSet<T>,
 }
 
@@ -164,14 +164,14 @@ pub enum TaskState {
 }
 
 /// Arc was used internally, so after `clone`, the same `TaskManager` was used,
-/// which means you can share `AsyncTasksRecoder` by clone.
+/// which means you can share `AsyncTasksRecorder` by clone.
 ///
 /// # Usage
 ///
-/// Launch a task with a **unique** `task_id` and a `Future` by [launch](AsyncTasksRecoder::launch).
+/// Launch a task with a **unique** `task_id` and a `Future` by [launch](AsyncTasksRecorder::launch).
 ///
 /// Query the state of the task with its `task_id`
-/// by [query_task_state](AsyncTasksRecoder::query_task_state) or [query_task_state_quick](AsyncTasksRecoder::query_task_state_quick).
+/// by [query_task_state](AsyncTasksRecorder::query_task_state) or [query_task_state_quick](AsyncTasksRecorder::query_task_state_quick).
 ///
 /// # Further Propositions & Proofs
 ///
@@ -358,30 +358,30 @@ pub enum TaskState {
 /// If the task is not in `all_tasks`, return `NotFound`, otherwise return `Working`.
 ///
 #[derive(Default, Debug, Clone)]
-pub struct AsyncTasksRecoder<T>
+pub struct AsyncTasksRecorder<T>
     where T: Eq + Hash + Clone + Send + 'static {
     task_manager: Arc<TaskManager<T>>,
 }
 
-impl<T> AsyncTasksRecoder<T>
+impl<T> AsyncTasksRecorder<T>
     where T: Eq + Hash + Clone + Send + Sync + 'static {
-    /// Create a completely new `AsyncTasksRecoder`.
+    /// Create a completely new `AsyncTasksRecorder`.
     pub fn new() -> Self {
-        AsyncTasksRecoder {
+        AsyncTasksRecorder {
             task_manager: TaskManager::new().into(),
         }
     }
 
     /// Create by `TaskManager`
     pub fn new_with_task_manager(task_manager: TaskManager<T>) -> Self {
-        AsyncTasksRecoder {
+        AsyncTasksRecorder {
             task_manager: task_manager.into(),
         }
     }
 
     /// Create by `Arc` of `TaskManager`
     pub fn new_with_task_manager_arc(task_manager: Arc<TaskManager<T>>) -> Self {
-        AsyncTasksRecoder {
+        AsyncTasksRecorder {
             task_manager,
         }
     }
@@ -400,7 +400,7 @@ impl<T> AsyncTasksRecoder<T>
     /// The return value of task is ignored, so please use other methods to handle the return value,
     /// such as channel or shared variable.
     ///
-    /// If you query after `launch().await`, you will get changed result (**P04** at [AsyncTasksRecoder](crate::AsyncTasksRecoder)).
+    /// If you query after `launch().await`, you will get changed result (**P04** at [AsyncTasksRecorder](crate::AsyncTasksRecorder)).
     pub async fn launch<Fut, R, E>(&self, task_id: T, task: Fut) -> Result<(), (TaskState, Fut)>
         where Fut: Future<Output=Result<R, E>> + Send + 'static,
               R: Send,
@@ -442,7 +442,7 @@ impl<T> AsyncTasksRecoder<T>
 
     /// Block until task finishes ("block" means it will keep `await` until finishing).
     ///
-    /// [launch](crate::AsyncTasksRecoder::launch) for more detail.
+    /// [launch](crate::AsyncTasksRecorder::launch) for more detail.
     ///
     /// Can be mixed with launch.
     ///
@@ -478,7 +478,7 @@ impl<T> AsyncTasksRecoder<T>
 
     /// Query the state of a task by `task_id`.
     ///
-    /// Linearizability guaranteed (**P05** at [AsyncTasksRecoder](crate::AsyncTasksRecoder)).
+    /// Linearizability guaranteed (**P05** at [AsyncTasksRecorder](crate::AsyncTasksRecorder)).
     ///
     /// **NOTE**: `working_tasks` usually has more contention.
     pub async fn query_task_state<Q>(&self, task_id: &Q) -> TaskState
@@ -546,8 +546,8 @@ impl<T> AsyncTasksRecoder<T>
     /// - Return `Err(RevokeFailReason<Fut, E>)` if `revoke_task` canceled or `revoke_task` returns `Err(E)`.
     ///
     /// If you want to revoke asynchronously, you could (all deadlock-free):
-    /// 1. Use another `AsyncTasksRecoder`, and launch a `Future` that call `revoke_task_block` here.
-    /// 2. Create a new unique `task_id` for this `revoke_task`, and launch it in this `AsyncTasksRecoder`.
+    /// 1. Use another `AsyncTasksRecorder`, and launch a `Future` that call `revoke_task_block` here.
+    /// 2. Create a new unique `task_id` for this `revoke_task`, and launch it in this `AsyncTasksRecorder`.
     ///
     /// check not revoking and set revoking -> check succeeded -> do revoke_task -> set not launched -> set not succeeded -> set not revoking
     pub async fn revoke_task_block<Fut, R, E>(&self, target_task_id: T, revoke_task: Fut) -> Result<R, RevokeFailReason<Fut, E>>
