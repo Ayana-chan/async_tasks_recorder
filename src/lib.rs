@@ -619,6 +619,7 @@ impl<T> AsyncTasksRecoder<T>
     }
 }
 
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub enum RevokeFailReason<Fut, E>
     where Fut: Send,
           E: Send {

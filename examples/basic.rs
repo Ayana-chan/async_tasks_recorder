@@ -68,10 +68,27 @@ async fn simulate_requests() {
     ).await;
     assert_eq!(result, UploadTaskState::Success);
     println!("RESPONSE: check_upload_state {}: {:?}", fake_md5, result);
+
+    println!("REQUEST: delete_file {}", fake_md5);
+    let result = delete_file(
+        recorder.clone(),
+        fake_md5.to_string(),
+    ).await;
+    assert!(result);
+    println!("RESPONSE: delete_file {}: {:?}", fake_md5, result);
+
+    println!("REQUEST: check_upload_state {}", fake_md5);
+    let result = check_upload_state(
+        recorder.clone(),
+        fake_md5.to_string(),
+    ).await;
+    assert_eq!(result, UploadTaskState::NotFound);
+    println!("RESPONSE: check_upload_state {}: {:?}", fake_md5, result);
 }
 
 // APIs -----------
 
+/// launch
 async fn upload_file(recorder: AsyncTasksRecoder<Arc<String>>, args: UploadFileArgs) {
     let destination = "some place".to_string(); // decided by some algorithm
     let fut = async move {
@@ -93,6 +110,7 @@ async fn upload_file(recorder: AsyncTasksRecoder<Arc<String>>, args: UploadFileA
     let _ = recorder.launch(args.md5.into(), fut).await;
 }
 
+/// check
 async fn check_upload_state(recorder: AsyncTasksRecoder<Arc<String>>, arg_md5: String) -> UploadTaskState {
     let arg_md5 = Arc::new(arg_md5);
     let res = recorder.query_task_state(&arg_md5).await;
@@ -103,6 +121,24 @@ async fn check_upload_state(recorder: AsyncTasksRecoder<Arc<String>>, arg_md5: S
         TaskState::NotFound => UploadTaskState::NotFound,
         TaskState::Working => UploadTaskState::Uploading,
     }
+}
+
+/// revoke
+async fn delete_file(recorder: AsyncTasksRecoder<Arc<String>>, arg_md5: String) -> bool {
+    let arg_md5 = Arc::new(arg_md5);
+    let fut = async move {
+        println!("delete_file start!");
+        let res = delete().await;
+        if res.is_ok() {
+            println!("delete_file finish!");
+        } else {
+            println!("delete_file error!");
+        }
+        res
+    };
+
+    let res = recorder.revoke_task_block(arg_md5, fut).await;
+    res.is_ok()
 }
 
 // other functions ------------
@@ -122,3 +158,6 @@ async fn large_callback() {
     println!("large_callback finish");
 }
 
+async fn delete() -> Result<(), ()> {
+    Ok(())
+}
