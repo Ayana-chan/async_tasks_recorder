@@ -70,18 +70,18 @@
 //!
 //! ## Abstract Model
 //! Here is the three-level structure for thinking about tasks' status:
-//! - Level 0: `real_none`, `real_failed`, `real_working`, `real_success` : **Exact status** of the tasks in the CPU (seen by God).
+//! - Level 0: `real_not_found`, `real_failed`, `real_working`, `real_success` : **Exact status** of the tasks in the CPU (seen by God).
 //! - Level 1: `failed_tasks`, `working_tasks`, `success_tasks` : **Containers** to store `task_id`s (a `task_id` can be stored in 0 to 2 containers simultaneously).
-//! - Level 2: `Not Found`, `Failed`, `Working`, `Success` : **States** of the task that could be obtained by `query_task_state`.
+//! - Level 2: `NotFound`, `Failed`, `Working`, `Success` : **States** of the task that could be obtained by `query_task_state`.
 //!
 //! ## State Transition Diagram
-//! - `Not Found` \-\-\-\-\> `Working` (first launch)
+//! - `NotFound` \-\-\-\-\> `Working` (first launch)
 //! - `Working` \-\-\-\-\> `Failed` (task failed)
 //! - `Failed` \-\-\-\-\> `Working` (first launch after failed)
 //! - `Working` \-\-\-\-\> `Success` (task success)
-//! - `Success` \-\-\-\-\> `Not Found` (revoke)
+//! - `Success` \-\-\-\-\> `NotFound` (revoke)
 //!
-//! If you equivalent `Not Found` to `Failed`, and ignore `revoke`, then:
+//! If you equivalent `NotFound` to `Failed`, and ignore `revoke`, then:
 //!
 //! `Failed` \<\-\-\-\> `Working` \-\-\-\-\> `Success`
 //!
@@ -96,11 +96,11 @@
 //! 1. If a task's state is `Success`, it must be `real_success`, i.e. $\text{Success}(id) \rightarrow \text{real\_success}(id)$.
 //! 2. If a task's state is `Failed`, it may be in any status, but mostly `real_failed`.
 //! 3. If a task's state is `Working`, it may be in any status, but mostly `real_working`.
-//! 4. If a task's state is `Not Found`, it may be in any status, but mostly `real_none`.
+//! 4. If a task's state is `NotFound`, it may be in any status, but mostly `real_not_found`.
 //!
 //! ### About Task State Transition
 //! 1. Any task's state can be **queried** at any time.
-//! 2. The initial state of the task is `Not Found`.
+//! 2. The initial state of the task is `NotFound`.
 //! 3. Task's state won't change immediately after `launch` called. But if you query after `launch().await`, you will get changed result.
 //! 4. Always, when a task whose state is `Failed` or `NotFound` is launched, it will be `Working` at some future moment.
 //! 5. Always, when a task is `Working`, it would eventually be `Fail` or `Success`.
@@ -253,7 +253,7 @@ pub enum TaskState {
 /// Very good.
 ///
 /// ## P03
-/// **No state would turn back to `Not found`.**
+/// **No state would turn back to `NotFound`.**
 ///
 /// From the pseudocode in **P02**:
 ///
@@ -273,24 +273,24 @@ pub enum TaskState {
 /// the task must already be in one of the `failed_tasks` or `success_tasks` options.
 ///
 /// So after first `Working`, the task must be in one of `tasks`,
-/// then it won't be `Not found` again. Q.E.D.
+/// then it won't be `NotFound` again. Q.E.D.
 ///
 /// ## P04
 /// **If you query after `launch().await`, you will get changed result.**
 ///
 /// `launch()` finishes just before `Future.await`.
 /// So before `launch()` finishes, all `tasks` has been changed,
-/// which means you won't get outdated `Failed` or `Not Found` after `launch().await`.
+/// which means you won't get outdated `Failed` or `NotFound` after `launch().await`.
 ///
 /// ## P05
 /// **Query is linearizable.**
 ///
 /// Query logic:
-/// 1. check `all_task` -> `Not Found`
+/// 1. check `all_task` -> `NotFound`
 /// 2. check `working_tasks` -> `Working`
 /// 3. check `success_tasks` -> `Success`
 /// 4. check `failed_tasks` -> `Failed`
-/// 5. check `all_tasks` -> `Working` if contained, otherwise `Not Found`
+/// 5. check `all_tasks` -> `Working` if contained, otherwise `NotFound`
 ///
 /// Linearizability: An event can be considered to occur at a moment
 /// during the time period between a request and a response.
@@ -324,7 +324,7 @@ pub enum TaskState {
 /// 3. `Fail`
 /// 4. `Working`
 /// 5. `Success`
-/// 6. `Not Found`
+/// 6. `NotFound`
 /// 7. `Working`
 /// 8. ...
 ///
@@ -337,18 +337,24 @@ pub enum TaskState {
 /// because every query later won't return earlier steps.
 /// Always returning `Failed` (step 1) in this case also keeps it linearizable, but not good.
 ///
-/// Note that the task can jump any steps, so it might have been `Working` 10 times between your query.
+/// Note that the task can jump any steps, so it might have been `Working` 10 times already between your query.
 ///
-/// Obviously, we only need to select one of `Working` or `NotFound` to return.
-/// - If failed once, could return `Working` (next step of `Failed`).
-/// - If succeeded once, could return `NotFound` (next step of `Success`).
+/// So we only need to select one of `Working` or `NotFound` to return:
+/// - If succeeded once, and it was just not in `success_tasks`,
+/// then it might be `NotFound`, `Working` or steps ahead of `Working` (maybe next `NotFound`).
+/// - If failed once, and it was just not in `failed_tasks`,
+/// then it might be `Working` or steps ahead of `Working` (maybe next `NotFound`).
+/// - If it is `NotFound`, return `NotFound`, otherwise return `Working`.
 ///
-/// Therefore, we just need to know whether the task failed or succeeded at the end.
-/// The "end" can be represented by the last query in `all_tasks`.
-/// - If the task is not in `all_tasks`, then it must have been `Not Found` before.
-/// - Otherwise, it must have been `Working` before.
+/// And a proposition will hold in other situations:
+/// A task is `NotFound` when it is **not** in `all_tasks`.
+/// Because:
+/// 1. `all_tasks` has high priority in query logic.
+/// 2. When revoke a task, it is removed from `all_tasks` before removing from `success_tasks`.
+/// 3. When launch a task, it is insert into `working_tasks` before inserting into `all_tasks`.
 ///
-/// Q.E.D.
+/// Just follow this proposition, we get:
+/// If the task is not in `all_tasks`, return `NotFound`, otherwise return `Working`.
 ///
 #[derive(Default, Debug, Clone)]
 pub struct AsyncTasksRecoder<T>
@@ -478,7 +484,7 @@ impl<T> AsyncTasksRecoder<T>
         where T: Borrow<Q>,
               Q: Hash + Eq + ?Sized {
 
-        // quick check `Not Found`
+        // quick check `NotFound`
         if !self.task_manager.all_tasks.contains_async(task_id).await {
             return TaskState::NotFound;
         }
