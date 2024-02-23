@@ -12,11 +12,11 @@ Dependency:
 
 Use this crate if:
 - Easy to generate an **unique** `task_id` (not necessarily `String`) for a future (task).
-- Don't want tasks with the same `task_id` to succeed more then once.
+- Don't want tasks with the same `task_id` to succeed more than once.
 - Want to record and query all succeeded tasks and failed tasks.
-- Want to handling every task in the same state (not just focus on one state).
+- Want to handle every task in the same state (not just focus on one state).
 - Need linearizable query.
-- Want to revoke a task, and don't want the revoking to succeed more then once.
+- Want to revoke a task, and don't want the revoking to succeed more than once.
 
 [Example](https://github.com/Ayana-chan/ipfs_storage_cruster/tree/master/crates/async_tasks_recorder/examples).
 
@@ -38,7 +38,7 @@ Revoke a task with its `task_id` and a `Future` for revoking by `revoke_task_blo
 Remember that you can add **anything** in the `Future` to achieve the functionality you want.
 For example:
 - Handle your `Result` in `Future`, and then return empty result `Result<(),()>`.
-- Send a message to a one shot channel at the end of the `Future` to notify upper level that "This task is done".
+- Send a message to a one shot channel at the end of the `Future` to notify upper level that "this task done".
   Don't forget to consider using `tokio::spawn` when the channel may not complete sending immediately.
 - Set other callback functions.
 
@@ -61,10 +61,10 @@ then just use `scc::HashMap` (`task_id` \-\> `task_status`) to build a simpler i
 which might have less contention and cloning, but more expansive to iterate.
 And the `scc::HashMap::update_async` could be a powerful tool for atomic operations.
 
-You should also avoid using this crate if you just want to handle every tasks in only one state.
+You should also avoid using this crate if you just want to handle every task in only one state.
 For example, if you just want to manage the failed tasks,
 then you should use `scc::HashMap` to record tasks' states,
-and insert the failed tasks into a external `Arc<scc::HashSet>` in `Future`.
+and insert the failed tasks into an external `Arc<scc::HashSet>` in `Future`.
 
 **Version less than 1.1.1 has bugs.**
 
