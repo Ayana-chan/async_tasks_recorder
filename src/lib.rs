@@ -1,5 +1,3 @@
-//! > A big bug has just been fixed, so the document may not be complete, but don't worry too much
-//!
 //! # Introduction
 //!
 //! A struct for recording execution status of async tasks with lock-free and async methods.
@@ -18,7 +16,7 @@
 //! - Want to record and query all succeeded tasks and failed tasks.
 //! - Want to handling every task in the same state (not just focus on one state).
 //! - Need linearizable query.
-//! - Want to revoke a task.
+//! - Want to revoke a task, and don't want the revoking to succeed more then once.
 //!
 //! [Example](https://github.com/Ayana-chan/ipfs_storage_cruster/tree/master/crates/async_tasks_recorder/examples).
 //!
@@ -85,12 +83,13 @@
 //!
 //! `Failed` \<\-\-\-\> `Working` \-\-\-\-\> `Success`
 //!
-//! ## Nature TODO fix
+//! ## Nature
 //! ### About Task
 //! 1. A task is **launched** by passing a `Future<Output=Result<R, E>>` with unique `task_id`.
 //! 2. A task is `real_success` when return `Ok(R)`, and `real_failed` when return `Err(E)`.
 //! 3. Different future with **the same `task_id`** is considered **the same task**.
 //! 4. The same task **can only `real_success` once**, e.g. a purchase process would never succeed more then once by launching with unique process id as `task_id`.
+//! 5. A succeeded task can only be **revoked** successfully **once**.
 //!
 //! ### About Task State
 //! 1. If a task's state is `Success`, it must be `real_success`, i.e. $\text{Success}(id) \rightarrow \text{real\_success}(id)$.
@@ -104,7 +103,7 @@
 //! 3. Task's state won't change immediately after `launch` called. But if you query after `launch().await`, you will get changed result.
 //! 4. Always, when a task whose state is `Failed` or `NotFound` is launched, it will be `Working` at some future moment.
 //! 5. Always, when a task is `Working`, it would eventually be `Fail` or `Success`.
-//! 6. Always, when a task is `Success`, it would be `Success` forever.
+//! 6. Always, when a task is `Success`, it would keep `Success` until the revoking succeed, and then become `NotFound`.
 //!
 //! # Other
 //! Further propositions and proofs at [AsyncTasksRecoder](AsyncTasksRecoder).
