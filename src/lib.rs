@@ -359,7 +359,7 @@ pub enum TaskState {
 ///
 #[derive(Default, Debug, Clone)]
 pub struct AsyncTasksRecorder<T>
-    where T: Eq + Hash + Clone + Send + 'static {
+    where T: Eq + Hash + Clone + Send + Sync + 'static {
     task_manager: Arc<TaskManager<T>>,
 }
 
