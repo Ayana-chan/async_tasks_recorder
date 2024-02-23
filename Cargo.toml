@@ -1,6 +1,6 @@
 [package]
 name = "async_tasks_recorder"
-version = "1.1.2"
+version = "1.1.3"
 edition = "2021"
 description = "A struct for recording execution status of async tasks with lock-free and async methods."
 license = "MIT OR Apache-2.0"

@@ -31,6 +31,8 @@
 //! Query the state of the task with its `task_id`
 //! by [query_task_state](AsyncTasksRecoder::query_task_state) or [query_task_state_quick](AsyncTasksRecoder::query_task_state_quick).
 //!
+//! Revoke a task with its `task_id` and a `Future` for revoking by [revoke_task_block](crate::AsyncTasksRecoder::revoke_task_block).
+//!
 //! ## Skills
 //!
 //! Remember that you can add **anything** in the `Future` to achieve the functionality you want.
