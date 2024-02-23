@@ -398,15 +398,16 @@ impl<T> AsyncTasksRecoder<T>
         where Fut: Future<Output=Result<R, E>> + Send + 'static,
               R: Send,
               E: Send {
-        // insert all -> insert working -> check success -> remove failed -> work -> insert success/failed -> remove working
-        let _ = self.task_manager.all_tasks.insert_async(task_id.clone()).await;
-
+        // insert working -> insert all -> check success -> remove failed -> work -> insert success/failed -> remove working
         // `working_tasks` play the role of lock
         let res = self.task_manager.working_tasks.insert_async(task_id.clone()).await;
         if res.is_err() {
             // on working
             return Err((TaskState::Working, task));
         }
+
+        let _ = self.task_manager.all_tasks.insert_async(task_id.clone()).await;
+
         // check succeeded
         if self.task_manager.success_tasks.contains_async(&task_id).await {
             return Err((TaskState::Success, task));
@@ -443,12 +444,13 @@ impl<T> AsyncTasksRecoder<T>
         where Fut: Future<Output=Result<R, E>> + Send + 'static,
               R: Send,
               E: Send {
-        let _ = self.task_manager.all_tasks.insert_async(task_id.clone()).await;
-
         let res = self.task_manager.working_tasks.insert_async(task_id.clone()).await;
         if res.is_err() {
             return Err((TaskState::Working, task));
         }
+
+        let _ = self.task_manager.all_tasks.insert_async(task_id.clone()).await;
+
         if self.task_manager.success_tasks.contains_async(&task_id).await {
             return Err((TaskState::Success, task));
         }
