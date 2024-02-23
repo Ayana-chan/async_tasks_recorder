@@ -176,29 +176,46 @@ fn test_stress_large_task_latency_range() {
 
 #[test]
 #[parallel]
-fn test_simple_launch_and_check_multi() {
+fn test_simple_launch_check_multi() {
     do_async_test(
         RuntimeType::MultiThread,
-        test_simple_launch_and_check(20000),
+        test_simple_launch_check(20000),
     );
 }
 
 #[test]
 #[parallel]
-fn test_simple_launch_and_check_single() {
+fn test_simple_launch_check_single() {
     do_async_test(
         RuntimeType::CurrentThread,
-        test_simple_launch_and_check(5000),
+        test_simple_launch_check(5000),
     );
 }
 
-// TODO 多次revoke
 #[test]
 #[parallel]
-fn test_simple_launch_and_check_and_revoke_multi() {
+fn test_simple_launch_check_revoke_multi() {
     do_async_test(
         RuntimeType::MultiThread,
-        test_simple_launch_and_check_and_revoke(20000),
+        test_simple_launch_check_revoke_loop(20000, 1),
+    );
+}
+
+#[test]
+#[parallel]
+fn test_simple_launch_check_revoke_loop_single() {
+    do_async_test(
+        RuntimeType::CurrentThread,
+        test_simple_launch_check_revoke_loop(5000, 1),
+    );
+}
+
+#[test]
+#[parallel]
+fn test_simple_launch_check_revoke_loop_multi() {
+    do_async_test(
+        RuntimeType::MultiThread,
+        test_simple_launch_check_revoke_loop(2000, 30),
     );
 }
 
@@ -207,6 +224,6 @@ fn test_simple_launch_and_check_and_revoke_multi() {
 fn test_simple_launch_and_check_and_revoke_single() {
     do_async_test(
         RuntimeType::CurrentThread,
-        test_simple_launch_and_check_and_revoke(5000),
+        test_simple_launch_check_revoke_loop(500, 30),
     );
 }
