@@ -427,8 +427,8 @@ impl<T> AsyncTasksRecorder<T>
 
         // start
         let _task = tokio::spawn(async move {
-            let add_pin_res = task.await;
-            if add_pin_res.is_ok() {
+            let task_res = task.await;
+            if task_res.is_ok() {
                 let _ = task_manager.success_tasks.insert_async(task_id.clone()).await;
                 task_manager.working_tasks.remove_async(&task_id).await;
             } else {
