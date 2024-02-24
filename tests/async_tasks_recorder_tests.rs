@@ -7,10 +7,6 @@ use serial_test::{serial, parallel};
 
 mod async_tasks_recorder_tests_repo;
 
-// TODO launch await后的保证，仿照basic
-// TODO 失败后重用future的测试与示例
-// TODO Revoke的测试与示例
-
 #[test]
 #[parallel]
 fn test_once_multi() {
