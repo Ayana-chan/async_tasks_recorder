@@ -199,7 +199,7 @@ fn test_simple_launch_check_revoke_multi() {
 
 #[test]
 #[parallel]
-fn test_simple_launch_check_revoke_loop_single() {
+fn test_simple_launch_check_revoke_single() {
     do_async_test(
         RuntimeType::CurrentThread,
         test_simple_launch_check_revoke_loop(5000, 1),
@@ -217,7 +217,7 @@ fn test_simple_launch_check_revoke_loop_multi() {
 
 #[test]
 #[parallel]
-fn test_simple_launch_and_check_and_revoke_single() {
+fn test_simple_launch_check_revoke_loop_single() {
     do_async_test(
         RuntimeType::CurrentThread,
         test_simple_launch_check_revoke_loop(500, 30),
